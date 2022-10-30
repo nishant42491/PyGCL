@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from torch import nn
 from torch.optim import Adam
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score,accuracy_score,roc_auc_score
 
 from GCL.eval import BaseEvaluator
 
@@ -60,6 +60,9 @@ class LREvaluator(BaseEvaluator):
                     y_pred = classifier(x[split['test']]).argmax(-1).detach().cpu().numpy()
                     test_micro = f1_score(y_test, y_pred, average='micro')
                     test_macro = f1_score(y_test, y_pred, average='macro')
+                    test_f1 = f1_score(y_test, y_pred, average='binary')
+                    test_auc = roc_auc_score(y_test, y_pred)
+                    test_acc = accuracy_score(y_test, y_pred)
 
                     y_val = y[split['valid']].detach().cpu().numpy()
                     y_pred = classifier(x[split['valid']]).argmax(-1).detach().cpu().numpy()
@@ -69,12 +72,18 @@ class LREvaluator(BaseEvaluator):
                         best_val_micro = val_micro
                         best_test_micro = test_micro
                         best_test_macro = test_macro
+                        best_test_f1 = test_f1
                         best_epoch = epoch
+                        best_test_auc = test_auc
+                        best_test_acc = test_acc
 
                     pbar.set_postfix({'best test F1Mi': best_test_micro, 'F1Ma': best_test_macro})
                     pbar.update(self.test_interval)
 
         return {
             'micro_f1': best_test_micro,
-            'macro_f1': best_test_macro
+            'macro_f1': best_test_macro,
+            'f1' : best_test_f1,
+            'auc' : best_test_auc,
+            'acc' : best_test_acc,
         }
